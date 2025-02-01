@@ -22,8 +22,9 @@ from .forms import (
     ProfileEditForm,
     SearchForm,
     SignUpForm,
+    CommentForm,
 )
-from .models import Post
+from .models import Post, Comment
 
 User = get_user_model()
 
@@ -273,3 +274,18 @@ class PostLikeAPIView(LoginRequiredMixin, View):
         except Post.DoesNotExist:
             result = "DoesNotExist"
         return JsonResponse({"result": result})
+
+class CommentView(LoginRequiredMixin, CreateView):
+    model = Comment
+    form_class = CommentForm
+    success_url = reverse_lazy("home")
+
+    def get_form_kwargs(self):
+        post = get_object_or_404(Post, pk=self.kwargs["post_pk"])
+        self.object = self.model(user=self.request.user, post=post)
+        return super().get_form_kwargs()
+    
+    def form_valid(self, form):
+        form.instance.user = self.request.user  
+        form.instance.post = get_object_or_404(Post, pk=self.kwargs["post_pk"])  
+        return super().form_valid(form)
